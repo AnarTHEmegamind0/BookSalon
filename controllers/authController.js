@@ -7,6 +7,7 @@ const {
   setOTPExpiration,
   isOTPExpired,
 } = require("../utils/otpGenerator");
+const sendEmail = require("../utils/emailSender");
 
 // Register a new user
 const register = async (req, res, next) => {
@@ -40,7 +41,13 @@ const register = async (req, res, next) => {
       otpExpires,
     });
 
-    // TODO: Send OTP via email or SMS
+    const emailSent = await sendEmail(email, "Your OTP Code", `Your OTP is: ${otp}`);
+    if (!emailSent) {
+      return res.status(500).json({
+        success: false,
+        error: "Failed to send email",
+      });
+    }
 
     res.status(201).json({
       success: true,
@@ -165,7 +172,20 @@ const login = async (req, res, next) => {
       user.otpExpires = otpExpires;
       await user.save();
 
-      // TODO: Send OTP via email or SMS
+      try {
+        const emailSent = await sendEmail(email, "Your OTP Code", `Your OTP is: ${otp}`);
+        if (!emailSent) {
+          return res.status(500).json({
+            success: false,
+            error: "Failed to send email",
+          });
+        }
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          error: "An unexpected error occurred",
+        });
+      }
 
       return res.status(401).json({
         success: false,
@@ -223,7 +243,20 @@ const requestOTP = async (req, res, next) => {
     user.otpExpires = otpExpires;
     await user.save();
 
-    // TODO: Send OTP via email or SMS
+    try {
+      const emailSent = await sendEmail(email, "Your OTP Code", `Your OTP is: ${otp}`);
+      if (!emailSent) {
+        return res.status(500).json({
+          success: false,
+          error: "Failed to send email",
+        });
+      }
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        error: "An unexpected error occurred",
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -257,7 +290,20 @@ const forgotPassword = async (req, res, next) => {
     user.otpExpires = otpExpires;
     await user.save();
 
-    // TODO: Send OTP via email or SMS
+    try {
+      const emailSent = await sendEmail(email, "Your OTP Code", `Your OTP is: ${otp}`);
+      if (!emailSent) {
+        return res.status(500).json({
+          success: false,
+          error: "Failed to send email",
+        });
+      }
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        error: "An unexpected error occurred",
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -406,9 +452,9 @@ const resetPasswordValidation = [
 ];
 
 const updateProfileValidation = [
-  body("name").optional(),
-  body("phone").optional(),
-  body("profileImage").optional(),
+  body("name").optional().isString().withMessage("Name must be a string"),
+  body("phone").optional().isString().withMessage("Phone must be a string"),
+  body("profileImage").optional().isURL().withMessage("Invalid profile image URL"),
 ];
 
 module.exports = {
